@@ -9,23 +9,24 @@ SetCapsLockState, AlwaysOff
 ; global variables
 caps := 0 ; whether capslock is on
 vim := 0 ; whether vim mode is on
-search := * ; search string
+search := { pattern: "", source: "", pos: 0 }
 repeat := 0 ; whether to repeat action
 num := 1 ; number of times to repeat action
 char := * ; temp variable for next/prev chars
 
 ; visual indicator
-guiPos := A_ScreenHeight - 35
+guiPos := A_ScreenHeight - 52
 Gui, +AlwaysOnTop -Caption +ToolWindow +LastFound
 Gui, Color, 000000
 Gui, Font, cFFFFFF s10, Consolas
-Gui, Add, Text, x10 y2, VIM
-;Gui, Add, Text, x10 y2, SEARCH
+Gui, Add, Text, vDisplay x10 y2 Hidden, SEARCH
+Gui, Add, Text, vMode x10 y2 Hidden, VIM
 Gui, Margin, 12, 3
-Gui, Show, x2 y%guiPos% NoActivate
+Gui, Show, x12 y%guiPos% NoActivate
 Gui, Hide
 
 /* todo
+condense vim-related globals into objects
 vim layer:
     search w/ gui
     delete
@@ -53,11 +54,8 @@ CapsLock::Esc
     Send {;}
     return
 
-; select word on Ctrl+PrtSc
-^Printscreen::
-    Send ^{Left}
-    Send ^+{Right}
-    return
+; Windows clipboard on Ctrl+PrtSc
+^Printscreen::#v
 
 ; send Ctrl+A on Shift+PrtSc
 +Printscreen::Send ^{a}
@@ -67,12 +65,8 @@ $Tab::
     Keywait Tab, T 0.2
     if !Errorlevel ; tapped
         Send {Tab}
-    else { ; held
-        Send {Space}
-        Send {Space}
-        Send {Space}
-        Send {Space}
-    }
+    else ; held
+        Send {Space 4}
     Keywait Tab
     Send {Tab up} ; prevent repeated triggers
     return
@@ -89,7 +83,7 @@ $Esc::
             Send {``}{``}
     }
     Keywait Esc
-    Send {Esc Up} ; pr event repeated triggers
+    Send {Esc Up} ; prevent repeated triggers
     return
 
 ; --------------------------------------------------
@@ -100,38 +94,17 @@ enterVim() {
     vim := 1
     num := 1
     repeat := 0
-    Gui, Show, NoActivate
-    GuiControl, Show, VIM
+    GuiControl, Show, Mode
+    Gui, Show, NoActivate AutoSize
     Send {Insert}
     return
 }
 exitVim() {
     global vim := 0
+    GuiControl, Hide, Mode
     Gui, Hide
     Send {Insert}
     return
-}
-searchLine(pattern, n:=1) {
-    ; grab rest of line to clipboard
-    Send {Home}
-    tmp := ClipboardAll
-    Clipboard := ""
-    Send +{End}^c
-    ClipWait, 1, 1
-    Send {Left}
-    if ErrorLevel {
-        MsgBox, 48, Error, An error occurred while waiting for the clipboard.
-        Return
-    }
-
-    ; search for text
-    pos := InStr(Clipboard, pattern, , , n)
-    if (pos) {
-        Send % "{Right " pos - 1 "}"
-    }
-
-    ; restore old clipboard value
-    Clipboard := tmp
 }
 reset() {
     global repeat, num, char
@@ -141,17 +114,128 @@ reset() {
     return
 }
 
+; move to the next/prev occurence of the pattern in the current line, using global search object
+searchWithInput() {
+    global search := { pattern: "", source: "", pos: 0 }
+    GuiControl, Show, Display
+    Gui, Show, NoActivate Autosize
+
+    ; temporarily disable hold Esc hotkey to allow Esc cancel
+    Hotkey, $Esc, Off
+
+    ; read search string, using "Enter" to send and "/" or "Esc" to cancel
+    pattern := ""
+    loop {
+        Input, key, L1, {Enter}{Backspace}{/}{Esc}
+        if InStr(ErrorLevel, "Enter") {
+            ; search for pattern
+            break
+        } else if InStr(ErrorLevel, "Backspace") {
+            if GetKeyState("Control", "P") {
+                ; ctrl + backspace
+                RegExMatch(pattern, ".*\W", match) ; matches everything up to the last non-word character
+                if (match)
+                    pattern := match
+                else
+                    pattern := ""
+            } else {
+                ; backspace
+                StringTrimRight, pattern, pattern, 1
+            }
+        } else if InStr(ErrorLevel, "EndKey:") {
+            ; cancel
+            pattern := ""
+            break
+        }
+
+        ; concat
+        pattern .= key
+
+        ; display search pattern
+        width := 24 + StrLen(pattern) * 7
+        GuiControl, , Display, %pattern%
+        GuiControl, Move, Display, w%width%
+        Gui, Show, w%width%
+    }
+    search.pattern := pattern
+
+    ; cleanup
+    Hotkey, $Esc, On
+    GuiControl, , Display, SEARCH
+    GuiControl, Move, Display, w64
+    GuiControl, Hide, Display
+    Gui, Hide
+
+    ; search for pattern
+    if StrLen(search.pattern) {
+        searchLine()
+    }
+}
+searchLine(forward := 1) {
+    global search
+
+    if !search.pos {
+        ; grab rest of line to clipboard
+        Send {Home}
+        tmp := ClipboardAll
+        Clipboard := ""
+        Send +{End}^c
+        ClipWait, 1, 1
+        Send {Left}
+        if ErrorLevel {
+            MsgBox, 48, Error, An error occurred while waiting for the clipboard.
+            return
+        }
+
+        ; cache line for future scans
+        search.source := Clipboard
+
+        ; restore old clipboard value
+        Clipboard := tmp
+    }
+
+    ; test string sss
+
+    ; set current position & search direction
+    pos := forward ? (search.pos + 1) : -(StrLen(search.source) - search.pos + 1)
+
+    ; search for text
+    i := InStr(search.source, search.pattern, , pos, 1)
+    if i {
+        if forward
+            Send % "{Right " (i - pos) + (search.pos ? 1 : 0) "}"
+        else
+            Send % "{Left " search.pos - i "}"
+    }
+    search.pos := i
+    return
+}
+; move to the next occurence of the pattern in the current line, not using global search object
+findNext(pattern, n:=1) {
+    ; grab rest of line to clipboard
+    tmp := ClipboardAll
+    Clipboard := ""
+    Send +{End}^c
+    ClipWait, 1, 1
+    Send {Left}
+    if ErrorLevel {
+        MsgBox, 48, Error, An error occurred while waiting for the clipboard.
+        return
+    }
+
+    ; search for text
+    pos := InStr(Clipboard, pattern, , , n)
+    if pos {
+        Send % "{Right " pos - 1 "}"
+    }
+
+    ; restore old clipboard value
+    Clipboard := tmp
+}
+
 ; --------------------------------------------------
 ; caps layers
 ; --------------------------------------------------
-
-; modifiers
-CapsLock & a::Send {Control down}
-CapsLock & a up::Send {Control up}
-;CapsLock & s::Send {Shift down}
-;CapsLock & s up::Send {Shift up}
-
-; modes
 CapsLock & Tab::Insert
 CapsLock & Shift::
     if vim
@@ -161,104 +245,155 @@ CapsLock & Shift::
     return
 
 #If GetKeyState("CapsLock", "P")
+    ; block a; enables a to be used as modifier key
+    a::return
+
     ; navigation
     j::Left
+    a & j::+Left
     k::Down
+    a & k::+Down
     i::Up
+    a & i::+Up
     l::Right
+    a & l::+Right
     u::^Left
+    a & u::^+Left
     o::^Right
-    a & u::+Left
-    a & o::+Right
-    \::Home
+    a & o::^+Right
+    \::Send {Home}
+    a & \::Send +{Home}
     Enter::Send {End}
+    a & Enter::Send +{End}
 
     ; deletion
     Backspace::Delete
+    a & Backspace::^Delete
     =::^Backspace
     p::Backspace
-    y::Send ^{Backspace}
-    h::Send ^{Delete}
+    a & p::Delete
+    y::^Backspace
+    a & y::^Delete
 
     ; brackets and symbols
     f::Send {(}
+    a & f::
+        Send {(}
+        Send {)}
+        Send {Left}
+        return
     c::Send {)}
     d::Send {[}
+    a & d::
+        Send {[}
+        Send {]}
+        Send {Left}
+        return
     x::Send {]}
     g::Send {{}
+    a & g::
+        Send {{}
+        Send {}}
+        Send {Left}
+        return
     v::Send {}}
     [::Send {{}
+    a & [::
+        Send {[}
+        Send {]}
+        Send {Left}
+        return
     ]::Send {}}
     r::Send {&}
     t::Send {*}
     '::Send {"}
+    a & '::
+        Send {" 2}
+        Send {Left}
+        return
     1::Send {!}
     2::Send {@}
     3::Send {#}
     4::Send {$}
+    a & 4::
+        Send {$ 2}
+        Send {Left}
+        return
     5::Send {`%}
+    a & 5::
+        Send {`% 2}
+        Send {Left}
+        return
     6::Send {^}
     7::Send {&}
     8::Send {*}
     9::Send {(}
     0::Send {)}
     Space::_
+    Up::Send {U+2191}    ; ↑
+    Down::Send {U+2193}  ; ↓
+    Left::Send {U+2190}  ; ←
+    Right::Send {U+2192} ; →
     n::
-        Send {(}
-        Send {)}
-        Send {Left}
+        Send <span class="purple"></span>
+        Send {Left 7}
+        ; Send {' 2}
+        ; Send {Left}
         return
     m::
-        Send {"}
-        Send {"}
+        Send {" 2}
         Send {Left}
         return
 
     ; terminal
     z::Run cmd
+    a & z::Run *RunAs cmd ; run as admin
+    ; a & z::Run powershell.exe
 
-    ; windows clipboard
-    .::#v
-        
+    ; select inner word/line
+    h::
+        Send {Right}
+        Send ^{Left}
+        Send ^+{Right}
+        return
+    a & h::
+        Send {Home}
+        Send +{End}
+        return
+
     ; select all
     s::Send ^{a}
+
+    ; save
+    a & s::Send ^{s}
 
     ; fullscreen
     -::Send {F11}
 
     ; markdown/latex
     q::
-        Send {``}
-        Send {``}
+        Send {`` 2}
         Send {Left}
         return
     w::
-        Send {$}
-        Send {$}
-        Send {$}
-        Send {$}
-        Send {Left}
-        Send {Left}
+        Send {$ 4}
+        Send {Left 2}
         return
     e::
-        Send {$}
-        Send {$}
+        Send {$ 2}
         Send {Left}
         return
     b::
-        Send {*}
-        Send {*}
+        Send {* 2}
         Send {Left}
         return
     Esc::
-        Send {``}
-        Send {``}
         Send {``}
         return
 
 
     ; emmet-like HTML/JSX completion: <$WORD$END />
-    ; .::
+    ; n::
     ;    Send ^{Left}
     ;    Send {<}
     ;    Send {Right}
@@ -272,7 +407,7 @@ CapsLock & Shift::
     ;    return
 
     ; emmet (in IDE) expand and move cursor to <$WORD$ $END$>\n</$WORD$>
-    ; ,::
+    ; n::
     ;     Send {Tab}
     ;     Sleep, 50
     ;     Send {Enter}
@@ -284,7 +419,7 @@ CapsLock & Shift::
 
 
     ; emmet (in IDE) expand and move cursor to <$WORD$ $END$ />
-    ; .::
+    ; m::
     ;     Send {/}
     ;     Send {Tab}
     ;     Sleep, 50
@@ -295,24 +430,16 @@ CapsLock & Shift::
     ;     Send {Left}
     ;     return
 
-    ; search in the current line for text with /
-    /::
-        ; read search string, using "Enter" to send and "/" to cancel
-        Input, search, , {Enter}{/}
-        if InStr(ErrorLevel, "Enter") {
-            searchLine(search)
-            num := 1
-        }
-        return
-    ; find next with ; 
-    `;::
-        num += 1
-        searchLine(search, num)
-        return
+    ; find pattern in the current line for text with /
+    /::searchWithInput()
+    ; find next with ;
+    `;::searchLine()
     ; find prev with ,
-    ,::
-        num -= 1
-        searchLine(search, num)
+    ,::searchLine(0)
+    ; repeat search with same pattern, in unseen line
+    .::
+        global search := { pattern: search.pattern, source: "", pos: 0 }
+        searchLine()
         return
 #If
 
@@ -339,7 +466,7 @@ CapsLock & Shift::
     +o::
         exitVim()
         Send {Home}
-        Loop, %num% {
+        loop, %num% {
             Send {Enter}
             Send {Up}
         }
@@ -373,7 +500,7 @@ CapsLock & Shift::
     w::
         if (char == "d")
             Send {Shift down}
-        Loop, %num% {
+        loop, %num% {
             Send ^{Right}^{Right}^{Left}
         }
         if (char == "d")
@@ -381,7 +508,8 @@ CapsLock & Shift::
         reset()
         return
     +w::
-        searchLine(" ", %num%)
+        global num
+        findNext(" ", num)
         Send {Right}
         reset()
         return
@@ -390,7 +518,8 @@ CapsLock & Shift::
         reset()
         return
     +e::
-        searchLine(" ", %num%)
+        global num
+        findNext(" ", num)
         Send {Left}
         reset()
         return
@@ -400,22 +529,11 @@ CapsLock & Shift::
         return
 
     ; search in line
-    f::
-        ; read search string, using "Enter" to send and "/" to cancel
-        Input, search, , {Enter}{/}
-        if InStr(ErrorLevel, "Enter") {
-            searchLine(search)
-            num := 1
-        }
-        return
-    `;::
-        num += 1
-        searchLine(search, num)
-        return
-    ,::
-        num -= 1
-        searchLine(search, num)
-        return
+    f::searchWithInput()
+    ; find next with ;
+    `;::searchLine()
+    ; find prev with ,
+    ,::searchLine(0)
 
     ; repeat actions
     1::num := (repeat ? (num * 10) : 0) + 1
@@ -453,7 +571,7 @@ CapsLock & Shift::
 ; reload
 !x::
     Suspend, Permit
-    if GetKeyState("Insert", "T")
+    if vim
         Send {Insert}
     Suspend
     return
@@ -461,7 +579,7 @@ CapsLock & Shift::
 ; reload
 !r::
     Suspend, Permit
-    if GetKeyState("Insert", "T")
+    if vim
         Send {Insert}
     Reload
     return
