@@ -27,6 +27,9 @@ Gui, Hide
 
 /* todo
 condense vim-related globals into objects
+allow templates to wrap selected text
+replace search Input with Edit GUI
+allow find next/prev without find text first, using mod layer to refresh cache/input new pattern?
 vim layer:
     search w/ gui
     delete
@@ -113,6 +116,56 @@ reset() {
     num := 1
     return
 }
+
+; backspace/delete camelCase, PascalCase, and snake_case words
+bkspCase() {
+    ; grab rest of word to clipboard
+    tmp := ClipboardAll
+    Clipboard := ""
+    Send ^+{Left}^c
+    ClipWait, 1, 1
+    if ErrorLevel {
+        MsgBox, 48, Error, An error occurred while waiting for the clipboard.
+        return
+    }
+
+    ; delete last word
+    match := RegExReplace(Clipboard, "_?([A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+)$|[^a-zA-Z0-9]+$")
+    if match
+        Send %match%
+    else
+        Send {Backspace}
+
+    ; restore old clipboard value
+    Clipboard := tmp
+
+    return
+}
+delCase() {
+    ; grab rest of word to clipboard
+    tmp := ClipboardAll
+    Clipboard := ""
+    Send ^+{Right}^c
+    ClipWait, 1, 1
+    if ErrorLevel {
+        MsgBox, 48, Error, An error occurred while waiting for the clipboard.
+        return
+    }
+
+    ; delete first word
+    match := RegExReplace(Clipboard, "^[^a-zA-Z0-9]+|^([A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+)_?")
+    if match
+        Send %match%
+    else
+        Send {Backspace}
+    Send % "{Left " StrLen(match) "}"
+
+    ; restore old clipboard value
+    Clipboard := tmp
+
+    return
+}
+
 
 ; move to the next/prev occurence of the pattern in the current line, using global search object
 searchWithInput() {
@@ -265,6 +318,14 @@ CapsLock & Shift::
     a & \::Send +{Home}
     Enter::Send {End}
     a & Enter::Send +{End}
+    m:: Send {Home}
+    a & m:: Send {End}
+
+    ; I also often use this key as a quick macro for templates that change often
+    ; m::
+        ; Send <span class="purple"></span>
+        ; Send {Left 7}
+        ; return
 
     ; deletion
     Backspace::Delete
@@ -314,6 +375,11 @@ CapsLock & Shift::
     1::Send {!}
     2::Send {@}
     3::Send {#}
+    a & 3:: ; useful for hex codes
+        Send ^{Left}
+        Send {#}
+        Send ^{Right}
+        return
     4::Send {$}
     a & 4::
         Send {$ 2}
@@ -335,14 +401,13 @@ CapsLock & Shift::
     Left::Send {U+2190}  ; ←
     Right::Send {U+2192} ; →
     n::
-        Send <span class="purple"></span>
-        Send {Left 7}
-        ; Send {' 2}
-        ; Send {Left}
+        Send {Right}
+        Send ^{Left}
+        Send ^+{Right}
         return
-    m::
-        Send {" 2}
-        Send {Left}
+    a & n::
+        Send {Home}
+        Send +{End}
         return
 
     ; terminal
@@ -350,16 +415,9 @@ CapsLock & Shift::
     a & z::Run *RunAs cmd ; run as admin
     ; a & z::Run powershell.exe
 
-    ; select inner word/line
-    h::
-        Send {Right}
-        Send ^{Left}
-        Send ^+{Right}
-        return
-    a & h::
-        Send {Home}
-        Send +{End}
-        return
+    ; backspace/delete camelCase, pascalCase, or snake_case words
+    h::bkspCase()
+    a & h::delCase()
 
     ; select all
     s::Send ^{a}
@@ -583,4 +641,3 @@ CapsLock & Shift::
         Send {Insert}
     Reload
     return
-
