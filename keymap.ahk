@@ -131,18 +131,22 @@ bkspCase() {
     }
 
     ; delete last word
-    match := RegExReplace(Clipboard, "_?([A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+)$|[^a-zA-Z0-9]+$")
-    if match
-        Send %match%
-    else
+    Clipboard := RegExReplace(Clipboard, "m)_?([A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+)$|[^a-zA-Z0-9]+$")
+    if (Clipboard != "") {
+        Send ^v
+        Sleep, 20 ; add small paste delay
+    } else {
         Send {Backspace}
+    }
 
     ; restore old clipboard value
     Clipboard := tmp
-
     return
 }
 delCase() {
+    ; add space for cursor re-positioning later
+    Send {Space}
+
     ; grab rest of word to clipboard
     tmp := ClipboardAll
     Clipboard := ""
@@ -154,19 +158,23 @@ delCase() {
     }
 
     ; delete first word
-    match := RegExReplace(Clipboard, "^[^a-zA-Z0-9]+|^([A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+)_?")
-    if match
-        Send %match%
-    else
-        Send {Backspace}
-    Send % "{Left " StrLen(match) "}"
+    Clipboard := RegExReplace(Clipboard, "m)^[^a-zA-Z0-9]+|^([A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+)_?")
+
+    if (Clipboard != "") {
+        Send ^v
+        Sleep, 20 ; add small paste delay
+        Send ^{Left}
+    } else {
+        Send {Delete}
+    }
+
+    ; remove added space
+    Send {Backspace}
 
     ; restore old clipboard value
     Clipboard := tmp
-
     return
 }
-
 
 ; move to the next/prev occurence of the pattern in the current line, using global search object
 searchWithInput() {
