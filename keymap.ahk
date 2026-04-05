@@ -30,6 +30,7 @@ condense vim-related globals into objects
 allow templates to wrap selected text
 replace search Input with Edit GUI
 allow find next/prev without find text first, using mod layer to refresh cache/input new pattern?
+add some way to activate Ctrl + ↑ and Ctrl + ↓ for 60% support: maybe replace m? or . after search changes?
 vim layer:
     search w/ gui
     delete
