@@ -6,6 +6,11 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetCapsLockState, AlwaysOff
 
+; -- config ----------------------------------------
+; whether to use ijkl (0) or hjkl (1) arrows
+vimArrows := 0
+; --------------------------------------------------
+
 ; global variables
 caps := 0 ; whether capslock is on
 vim := 0 ; whether vim mode is on
@@ -31,6 +36,7 @@ allow templates to wrap selected text
 replace search Input with Edit GUI
 allow find next/prev without find text first, using mod layer to refresh cache/input new pattern?
 add some way to activate Ctrl + ↑ and Ctrl + ↓ for 60% support: maybe replace m? or . after search changes?
+use tap hold arrows to allow Ctrl? also opens up u and y for vim-styled undo/redo
 vim layer:
     search w/ gui
     delete
@@ -306,23 +312,56 @@ CapsLock & Shift::
         enterVim()
     return
 
-#If GetKeyState("CapsLock", "P")
-    ; block a; enables a to be used as modifier key
-    a::return
-
+; config-dependent keys
+#If GetKeyState("CapsLock", "P") && !vimArrows
     ; navigation
+    i::Up
+    a & i::+Up
     j::Left
     a & j::+Left
     k::Down
     a & k::+Down
-    i::Up
-    a & i::+Up
     l::Right
     a & l::+Right
     u::^Left
     a & u::^+Left
     o::^Right
     a & o::^+Right
+
+    ; deletion
+    y::^Backspace
+    a & y::^Delete
+    h::bkspCase()
+    a & h::delCase()
+#If
+#If GetKeyState("CapsLock", "P") && vimArrows
+    ; navigation
+    h::Left
+    a & h::+Left
+    j::Down
+    a & j::+Down
+    k::Up
+    a & k::+Up
+    l::Right
+    a & l::+Right
+    y::^Left
+    a & y::^+Left
+    u::^Right
+    a & u::^+Right
+
+    ; deletion
+    o::^Backspace
+    a & o::^Delete
+    i::bkspCase()
+    a & i::delCase()
+#If
+
+; config-independent keys
+#If GetKeyState("CapsLock", "P")
+    ; block a; enables a to be used as modifier key
+    a::return
+
+    ; navigation
     \::Send {Home}
     a & \::Send +{Home}
     Enter::Send {End}
@@ -342,8 +381,6 @@ CapsLock & Shift::
     =::^Backspace
     p::Backspace
     a & p::Delete
-    y::^Backspace
-    a & y::^Delete
 
     ; brackets and symbols
     f::Send {(}
@@ -423,10 +460,6 @@ CapsLock & Shift::
     z::Run cmd
     a & z::Run *RunAs cmd ; run as admin
     ; a & z::Run powershell.exe
-
-    ; backspace/delete camelCase, pascalCase, or snake_case words
-    h::bkspCase()
-    a & h::delCase()
 
     ; select all
     s::Send ^{a}

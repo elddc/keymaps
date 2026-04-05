@@ -1,31 +1,58 @@
 # Custom Keymaps
-Custom keymaps for Windows, implemented in AutoHotKey. Designed for programmers who don't use full keyboards, 
+Custom keymaps for Windows, implemented in AutoHotKey. Designed for programmers who don't use full keyboards,
 don't like moving their hands, and/or don't always have the privilege of working in an code editor
 but still want nice keyboard shortcuts.
-<br><br>
+
+Choose between modern ijkl arrows or Vim-style hjkl arrows for navigation:
+<details open>
+<summary>Modern Layout (ijkl)</summary>
+
 <a href="https://www.keyboard-layout-editor.com/#/gists/db2921cd66d6b2ea9edfafbfa96ef98d">
-    <img width="1300" height="735" alt="image" 
-src="https://github.com/user-attachments/assets/249e7bda-5825-417c-8012-bf71d104bc2e"/>
+<img alt="ijkl arrows" src="https://github.com/user-attachments/assets/249e7bda-5825-417c-8012-bf71d104bc2e"/>
 </a>
+
+</details>
+
+<details>
+<summary>Vim-style Layout (hjkl)</summary>
+
+<a href="https://www.keyboard-layout-editor.com/#/gists/cb2a720d6b2f191db82fe5f64aead164">
+<img alt="hjkl arrows" src="https://github.com/user-attachments/assets/81356edd-9090-4f26-a5cc-1aa975404944"/>
+</a>
+
+</details>
+
+## Configuration
+
+Switch layouts by changing the config value at the top of `keymap.ahk`.
+
+```
+; -- config ----------------------------------------
+; whether to use ijkl (0) or hjkl (1) arrows 
+vimArrows := 0
+; --------------------------------------------------
+```
+
+## Caps Layer
 
 This keymap gives the `CapsLock` key two functions:
 * Tap to `Esc`
 * Hold to enter the **Caps Layer**
 
 While in the **Caps Layer**, holding `A` applies alternate behaviors to certain keys, highlighted above. For example:
-* `CapsLock + \` sends `Home` 
+* `CapsLock + \` sends `Home`
 * `CapsLock + A + \` sends `Shift + Home`
-<br><br>
-* `CapsLock + P` sends `Backspace` 
+  <br><br>
+* `CapsLock + P` sends `Backspace`
 * `CapsLock + A + P` sends `Delete`
-<br><br>
-* `CapsLock + N` selects the current word 
+  <br><br>
+* `CapsLock + N` selects the current word
 * `CapsLock + A + N` selects the current line
 
 `Win + CapsLock` applies the original `CapsLock` functionality.
 
 ## Templates
-Keys marked in blue indicate templates, which wrap the cursor in an opening and closing pair. 
+Keys marked in blue indicate templates, which wrap the cursor in an opening and closing pair.
 For example, `( )` acts as `($END$)`.
 
 Half-blue keys have split behavior: the white portion is the base behavior in the **Caps Layer**,
@@ -36,7 +63,7 @@ Cased backspace and delete remove sub-words in camelCase, PascalCase, and snake_
 turns `fooBar` into `foo`, `FooBar` into `Foo`, and `foo_bar` into `foo`.
 
 ## Searching
-Inline search allows for quick navigation within a line by jumping to the first, next, or previous occurence 
+Inline search allows for quick navigation within a line by jumping to the first, next, or previous occurence
 of any search pattern.
 
 To speed up repeated searches, inline search caches the current line and match position. By default, `Find Text`
