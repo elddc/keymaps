@@ -24,6 +24,7 @@ search := { pattern: "", source: "", pos: 0 }
 repeat := 0 ; whether to repeat action
 num := 1 ; number of times to repeat action
 char := * ; temp variable for next/prev chars
+inserted := 0 ; whether insert is on
 
 ; visual indicator
 guiPos := A_ScreenHeight - 52
@@ -64,7 +65,7 @@ CapsLock::Esc
     else
     	SetCapsLockState, AlwaysOff
 
-; add semicolon to end of line on Ctrl+;
+; add semicolon to end of line on Ctrl + ;
 ^`;::
     Send {End}
     Send {;}
@@ -81,10 +82,10 @@ CapsLock::Esc
         Send {RCtrl Up}
     return
 
-; Windows clipboard on Ctrl+PrtSc
+; Windows clipboard on Ctrl + PrtSc
 ^Printscreen::Send {Ctrl Up}#v
 
-; send Ctrl+A on Alt+PrtSc
+; send Ctrl + A on Alt + PrtSc
 !Printscreen::Send ^{a}
 
 ; hold Tab sends 4 spaces
@@ -113,21 +114,29 @@ $Esc::
     Send {Esc Up} ; prevent repeated triggers
     return
 
+Insert::
+    Send {Insert}
+    inserted := !inserted
+    return
+
 ; --------------------------------------------------
 ; utility functions
 ; --------------------------------------------------
 enterVim() {
-    global vim, repeat, num
+    global vim, repeat, num, inserted
     vim := 1
     num := 1
     repeat := 0
+    inserted := 1
     GuiControl, Show, Mode
     Gui, Show, NoActivate AutoSize
     Send {Insert}
     return
 }
 exitVim() {
-    global vim := 0
+    global vim, inserted
+    vim := 0
+    inserted := 0
     GuiControl, Hide, Mode
     Gui, Hide
     Send {Insert}
@@ -141,12 +150,17 @@ reset() {
     return
 }
 
-; backspace/delete camelCase, PascalCase, and snake_case words
+; --------------------------------------------------
+; cased operations
+;
+; operate on camelCase, PascalCase, and snake_case sub-words
+; --------------------------------------------------
 bkspCase() {
     ; grab rest of word to clipboard
     tmp := ClipboardAll
     Clipboard := ""
-    Send ^+{Left}^c
+    Send ^+{Left}
+    Send ^c
     ClipWait, 1, 1
     if ErrorLevel {
         MsgBox, 48, Error, An error occurred while waiting for the clipboard.
@@ -173,7 +187,8 @@ delCase() {
     ; grab rest of word to clipboard
     tmp := ClipboardAll
     Clipboard := ""
-    Send ^+{Right}^c
+    Send ^+{Right}
+    Send ^c
     ClipWait, 1, 1
     if ErrorLevel {
         MsgBox, 48, Error, An error occurred while waiting for the clipboard.
@@ -279,8 +294,6 @@ searchLine(forward := 1) {
         Clipboard := tmp
     }
 
-    ; test string sss
-
     ; set current position & search direction
     pos := forward ? (search.pos + 1) : -(StrLen(search.source) - search.pos + 1)
 
@@ -321,7 +334,7 @@ findNext(pattern, n:=1) {
 ; --------------------------------------------------
 ; caps layers
 ; --------------------------------------------------
-CapsLock & Tab::Insert
+CapsLock & Tab::gosub, Insert
 CapsLock & Shift::
     if vim
         exitVim()
@@ -361,16 +374,16 @@ CapsLock & Shift::
     a & k::+Up
     l::Right
     a & l::+Right
-    y::^Left
-    a & y::^+Left
-    u::^Right
-    a & u::^+Right
+    u::^Left
+    a & u::^+Left
+    i::^Right
+    a & i::^+Right
 
     ; deletion
     o::^Backspace
     a & o::^Delete
-    i::bkspCase()
-    a & i::delCase()
+    y::bkspCase()
+    a & y::delCase()
 #If
 
 ; config-independent keys
@@ -505,6 +518,9 @@ CapsLock & Shift::
         return
     Esc::
         Send {``}
+        return
+    `::
+        Send {`` 3}
         return
 
 
@@ -687,7 +703,7 @@ CapsLock & Shift::
 ; pause
 !x::
     Suspend, Permit
-    if vim
+    if inserted
         Send {Insert}
     Suspend
     return
@@ -695,7 +711,7 @@ CapsLock & Shift::
 ; reload
 !r::
     Suspend, Permit
-    if vim
+    if inserted
         Send {Insert}
     Reload
     return
