@@ -7,8 +7,14 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetCapsLockState, AlwaysOff
 
 ; -- config ----------------------------------------
-; whether to use ijkl (0) or hjkl (1) arrows
+; navigate with ijkl (0) or hjkl (1) arrows
 vimArrows := 0
+
+; copilot key remap to Ctrl (0) or PrintScreen (1)
+copAsPrtSc := 0
+
+; command prompt ("cmd"), powershell ("powershell.exe"), or any executable of choice
+terminal := "cmd"
 ; --------------------------------------------------
 
 ; global variables
@@ -33,9 +39,9 @@ Gui, Hide
 /* todo
 condense vim-related globals into objects
 allow templates to wrap selected text
-replace search Input with Edit GUI
 allow find next/prev without find text first, using mod layer to refresh cache/input new pattern?
 add some way to activate Ctrl + ↑ and Ctrl + ↓ for 60% support: maybe replace m? or . after search changes?
+allow multi-cursor search? might not be possible
 use tap hold arrows to allow Ctrl? also opens up u and y for vim-styled undo/redo
 vim layer:
     search w/ gui
@@ -64,11 +70,22 @@ CapsLock::Esc
     Send {;}
     return
 
-; Windows clipboard on Ctrl+PrtSc
-^Printscreen::#v
+; remap copilot key
+; note that this will not work with hotkeys that combine with Win or Shift
+*+#f23::
+    if copAsPrtSc
+        Send {Blind}{LWin Up}{LShift Up}{PrintScreen}
+    else
+        Send {Blind}{LWin Up}{LShift Up}{RCtrl Down}
+        KeyWait f23
+        Send {RCtrl Up}
+    return
 
-; send Ctrl+A on Shift+PrtSc
-+Printscreen::Send ^{a}
+; Windows clipboard on Ctrl+PrtSc
+^Printscreen::Send {Ctrl Up}#v
+
+; send Ctrl+A on Alt+PrtSc
+!Printscreen::Send ^{a}
 
 ; hold Tab sends 4 spaces
 $Tab::
@@ -457,9 +474,8 @@ CapsLock & Shift::
         return
 
     ; terminal
-    z::Run cmd
-    a & z::Run *RunAs cmd ; run as admin
-    ; a & z::Run powershell.exe
+    z::Run % terminal
+    a & z::Run *RunAs %terminal% ; run as admin
 
     ; select all
     s::Send ^{a}
@@ -668,7 +684,7 @@ CapsLock & Shift::
 ; --------------------------------------------------
 ; script state controls
 ; --------------------------------------------------
-; reload
+; pause
 !x::
     Suspend, Permit
     if vim

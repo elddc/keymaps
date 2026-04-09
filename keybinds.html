@@ -15,13 +15,16 @@
         }
     </style>
     <style>
+        div {
+            line-height: 1.15em;
+        }
         .keylabels:has(u) {
             padding-left: 0px !important;
         }
         .minikey {
             background: #313131;
             color: #eaeaea;
-            margin: 4px 2px;
+            margin: 3px 2px;
             padding: 6px;
             border-radius: 5px;
             box-shadow:
@@ -55,9 +58,6 @@
         .purple {
             color: #a448e8;
         }
-        .pink {
-            color: #d35623;
-        }
         .white {
             color: #eaeaea;
         }
@@ -90,6 +90,8 @@
         }
         u {
             font-size: 1.1em;
+            display: block;
+            margin-bottom: .35em;
         }
         .list {
             display: flex;
@@ -102,7 +104,7 @@
             column-gap: 8px;
             row-gap: 6px;
             align-items: center;
-            margin-top: 1.5em;
+            top: 1.5em;
         }
         .lhs {
             text-align: right;
@@ -123,7 +125,7 @@
 </head>
 <body>
 <div class="grid">
-    <span class="lhs"><span class="minikey">CapsLock</span></span>
+    <!--<span class="lhs"><span class="minikey">CapsLock</span></span>
     <span class="rhs"><span class="minikey">Esc</span></span>
 
     <span class="lhs"><span class="minikey">Win</span> + <span class="minikey">CapsLock</span></span>
@@ -138,7 +140,7 @@
     <span class="lhs"><span class="minikey">Ctrl</span> + <span class="minikey">PrtSc</span></span>
     <span class="rhs"><span class="minikey">Win</span>+<span class="minikey">V</span></span>
 
-    <span class="lhs"><span class="minikey">Shift</span> + <span class="minikey">PrtSc</span></span>
+    <span class="lhs"><span class="minikey">Alt</span> + <span class="minikey">PrtSc</span></span>
     <span class="rhs"><span class="minikey">Ctrl</span>+<span class="minikey">A</span></span>
 
     <span class="lhs">Hold <span class="minikey">Tab</span></span>
@@ -148,7 +150,53 @@
     <span class="rhs"><span class="minikey">`</span></span>
 
     <span class="lhs">Long Hold <span class="minikey">Esc</span></span>
-    <span class="rhs"><span class="minikey">`</span><span class="minikey">`</span><span class="minikey">`</span></span>
+    <span class="rhs"><span class="minikey">`</span><span class="minikey">`</span><span class="minikey">`</span></span>-->
+
+    <div class="list">
+        <span>
+            <span class="minikey ml0">CapsLock</span>:
+            <span class="minikey ml5">Esc</span>
+        </span>
+        </span>
+            <span>
+            <span class="minikey ml0">Win</span> + <span class="minikey">CapsLock</span>:
+            <span class="minikey ml5">CapsLock</span>
+        </span>
+        <span>
+            <span class='minikey ml0'>Ctrl</span> + <span class='minikey'>;</span>:
+            <span class='minikey ml5'>End</span><span class='minikey'>;</span>     </span>     <span>
+        </span>
+    </div>
+
+    <div class='list'>
+        <span>
+            <span class='minikey ml0'>Copilot</span>:
+            <span class='minikey ml5'>PrtSc</span> or <span class='minikey'>Ctrl</span>
+        </span>
+        <span>
+            <span class='minikey ml0'>Ctrl</span> + <span class='minikey'>PrtSc</span>:
+            <span class='minikey ml5'>Win</span>+<span class='minikey'>V</span>
+        </span>
+        <span>
+            <span class='minikey ml0'>Alt</span> + <span class='minikey'>PrtSc</span>:
+            <span class='minikey ml5'>Ctrl</span>+<span class='minikey'>A</span>
+        </span>
+    </div>
+
+    <div class="list">
+        <span>
+            Hold <span class="minikey">Tab</span>:
+            <span class="minikey ml5">Space</span><span class="minikey">Space</span><span class="minikey">Space</span><span class="minikey">Space</span>
+        </span>
+            <span>
+            Short Hold <span class="minikey">Esc</span>:
+            <span class="minikey ml5">`</span>
+        </span>
+            <span>
+            Long Hold <span class="minikey">Esc</span>:
+            <span class="minikey ml5">`</span><span class="minikey">`</span><span class="minikey">`</span>
+        </span>
+    </div>
 </div>
 </body>
 </html>

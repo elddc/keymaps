@@ -1,9 +1,18 @@
 # Custom Keymaps
-Custom keymaps for Windows, implemented in AutoHotKey. Designed for programmers who don't use full keyboards,
+Custom keymaps for Windows, designed for programmers who don't use full keyboards,
 don't like moving their hands, and/or don't always have the privilege of working in an code editor
 but still want nice keyboard shortcuts.
 
-Choose between modern ijkl arrows or Vim-style hjkl arrows for navigation:
+Key features:
+* Momentary layers with symbols, navigation keys, and other functions accessible via `CapsLock` and `CapsLock + A`
+* Remap `Copilot` key back to `Ctrl` or `PrintScreen`
+* Quick navigation with inline search
+* Programming shortcuts including sub-word deletion, paired bracket templates, quick semicolon line-ending, and more
+* Tap-hold behaviors to transform `Tab` to spaces and `Esc` to `` ` ``
+
+## Overview
+
+Choose between modern ijkl arrows or Vim-style hjkl arrows navigation.
 <details open>
 <summary>Modern Layout (ijkl)</summary>
 
@@ -17,20 +26,18 @@ Choose between modern ijkl arrows or Vim-style hjkl arrows for navigation:
 <summary>Vim-style Layout (hjkl)</summary>
 
 <a href="https://www.keyboard-layout-editor.com/#/gists/cb2a720d6b2f191db82fe5f64aead164">
-<img alt="hjkl arrows" src="https://github.com/user-attachments/assets/81356edd-9090-4f26-a5cc-1aa975404944"/>
+<img width="1287" height="739" alt="hjkl arrows" src="https://github.com/user-attachments/assets/e8767920-592a-4a88-882f-9299368689b6" />
 </a>
 
 </details>
 
 ## Configuration
 
-Switch layouts by changing the config value at the top of `keymap.ahk`.
+Use the config options at the top of `keymap.ahk` to change the following settings: 
+* Navigation cluster: ijkl (default) or hjkl arrows
+* Copilot key: remap to `Ctrl` (default) or `PrintScreen`
+* Preferred terminal: command prompt (default), PowerShell, or any executable of choice
 
-```
-; -- config ----------------------------------------
-; whether to use ijkl (0) or hjkl (1) arrows 
-vimArrows := 0
-; --------------------------------------------------
 ```
 
 ## Caps Layer
@@ -80,7 +87,7 @@ This feature is under development! Come back soon for more details.
 * Long press `Tab` to send four spaces.
 * Long press `Esc` to send `` ` ``. Keep pressing to extend it to `` ``` ``.
 * `Ctrl + ;` places a semicolon at the end of the line.
-* `CapsLock + Z` opens the Command Prompt. `CapsLock + A + Z` opens it with administrator access.
+* `CapsLock + Z` opens a terminal. `CapsLock + A + Z` opens it with administrator access.
 * `CapsLock + S` sends `Ctrl + A`. `CapsLock + A + S` sends `Ctrl + S`. The design is very human.
 * `CapsLock + A + 3` places a `#` at the start of the current word. This is useful for when you copy a hex code
   and it doesn't come with the hash, but the program that you paste it in expects one and isn't smart enough
