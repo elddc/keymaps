@@ -274,9 +274,11 @@ OnSearchSubmit:
     GuiControl, Move, SearchInput, w64
     GuiControl, Hide, SearchInput
     GuiControl, Hide, Display
-    if !vim
-        Gui, Hide
     Gui, Hide
+
+    ; display vim indicator
+    if vim
+        Gui, Show, Autosize NoActivate
 
     ; search
     inlineSearch()
@@ -288,9 +290,13 @@ GuiEscape:
     GuiControl, Move, SearchInput, w64
     GuiControl, Hide, SearchInput
     GuiControl, Hide, Display
-    if !vim
-        Gui, Hide
+    Gui, Hide
     reset()
+
+    ; display vim indicator
+    if vim
+        Gui, Show, Autosize NoActivate
+
     return
 
 #If search.state
