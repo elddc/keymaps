@@ -60,6 +60,8 @@ add some way to activate Ctrl + ↑ and Ctrl + ↓ for 60% support: maybe replac
 allow multi-cursor search? might not be possible
 use tap hold arrows to allow Ctrl? also opens up u and y for vim-styled undo/redo
 allow config to be changed through GUI
+multi-line jumps: paragraphs, brackets, etc
+    Scan chunks (e.g. {Up 20}, searching for matching open/close
 vim layer:
     search w/ gui
     delete
@@ -745,6 +747,14 @@ CapsLock & Shift::
         Send {End %num%}
         reset()
         return
+    +6::
+        Send {End}+{Home}
+        line := getClip()
+        Send {Left}
+
+        p := RegExMatch(line, "\S")
+        Send % "{Right " p - 1 "}"
+    ; todo g_ goes to last non-whitespace char in line
     w::
         if (char == "d")
             Send {Shift down}
